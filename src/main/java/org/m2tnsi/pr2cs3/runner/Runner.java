@@ -35,60 +35,65 @@ public class Runner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         Consumer<Long, String> consumer = createConsumer();
-        while(true) {
+        try {
             System.out.print("Entrez une commande: ");
             commands();
-            ConsumerRecords<Long, String> consumerRecords = consumer.poll(Duration.ofMillis(1000));
-            JSONParser parser = new JSONParser();
+            while (true) {
+                ConsumerRecords<Long, String> consumerRecords = consumer.poll(Duration.ofMillis(1000));
+                JSONParser parser = new JSONParser();
 
-            consumerRecords.forEach(record -> {
-                String value = record.value();
-                String key = String.valueOf(record.key());
-                switch(key) {
-                    case "get_global_values":
-                        try {
-                            Object obj = parser.parse(value);
-                            JSONObject jsonObject = (JSONObject) obj;
-                            System.out.println("Nombre de cas confirmés total: " + jsonObject.get("TotalConfirmed"));
-                            System.out.println("Nombre de nouveaux décès confirmés: " + jsonObject.get("NewDeaths"));
-                            System.out.println("Nombre de décès total: " + jsonObject.get("TotalDeaths"));
-                            System.out.println("Nombre de nouveaux rétablissement: " + jsonObject.get("NewRecovered"));
-                            System.out.println("Nombre total de personnes rétablies: " + jsonObject.get("TotalRecovered"));
-                        } catch(ParseException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "get_confirmed_avg":
-                        System.out.println("Moyenne de personne confirmés: " + value);
-                        break;
-                    case "get_deaths_avg":
-                        System.out.println("Moyenne des décès: " + value);
-                        break;
-                    case "get_countries_deaths_percent":
-                        System.out.println("Pourcentage de décès par rapport aux cas confirmés: " + value);
-                        break;
-                    case "get_country_values":
-                        try {
-                            Object obj = parser.parse(value);
-                            JSONObject jsonObject = (JSONObject) obj;
-                            System.out.println("Pays: " + jsonObject.get("Country"));
-                            System.out.println("Nouveaux cas confirmés: " + jsonObject.get("NewConfirmed"));
-                            System.out.println("Nombre de cas confirmés: " + jsonObject.get("TotalConfirmed"));
-                            System.out.println("Nombre de nouveaux décès confirmés: " + jsonObject.get("NewDeaths"));
-                            System.out.println("Nombre total de décès: " + jsonObject.get("TotalDeaths"));
-                            System.out.println("Nombre total de personnes rétablies: " + jsonObject.get("TotalRecovered"));
-                            System.out.println("En date du : " + jsonObject.get("DateMaj"));
-                        } catch(ParseException e){
-                            e.printStackTrace();
-                        }
-                        break;
-                    default:
-                        System.out.println("Réponse inconnue");
-                        break;
-                }
-            });
-            consumer.commitAsync();
-            Thread.sleep(1000);
+                consumerRecords.forEach(record -> {
+                    String value = record.value();
+                    String key = String.valueOf(record.key());
+                    switch (key) {
+                        case "get_global_values":
+                            try {
+                                Object obj = parser.parse(value);
+                                JSONObject jsonObject = (JSONObject) obj;
+                                System.out.println("Nombre de cas confirmés total: " + jsonObject.get("TotalConfirmed"));
+                                System.out.println("Nombre de nouveaux décès confirmés: " + jsonObject.get("NewDeaths"));
+                                System.out.println("Nombre de décès total: " + jsonObject.get("TotalDeaths"));
+                                System.out.println("Nombre de nouveaux rétablissement: " + jsonObject.get("NewRecovered"));
+                                System.out.println("Nombre total de personnes rétablies: " + jsonObject.get("TotalRecovered"));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case "get_confirmed_avg":
+                            System.out.println("Moyenne de personne confirmés: " + value);
+                            break;
+                        case "get_deaths_avg":
+                            System.out.println("Moyenne des décès: " + value);
+                            break;
+                        case "get_countries_deaths_percent":
+                            System.out.println("Pourcentage de décès par rapport aux cas confirmés: " + value + "%");
+                            break;
+                        case "get_country_values":
+                            try {
+                                Object obj = parser.parse(value);
+                                JSONObject jsonObject = (JSONObject) obj;
+                                System.out.println("Pays: " + jsonObject.get("Country"));
+                                System.out.println("Nouveaux cas confirmés: " + jsonObject.get("NewConfirmed"));
+                                System.out.println("Nombre de cas confirmés: " + jsonObject.get("TotalConfirmed"));
+                                System.out.println("Nombre de nouveaux décès confirmés: " + jsonObject.get("NewDeaths"));
+                                System.out.println("Nombre total de décès: " + jsonObject.get("TotalDeaths"));
+                                System.out.println("Nombre total de personnes rétablies: " + jsonObject.get("TotalRecovered"));
+                                System.out.println("En date du : " + jsonObject.get("DateMaj"));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        default:
+                            System.out.println("Réponse inconnue");
+                            break;
+                    }
+                });
+                consumer.commitAsync();
+                System.out.print("Entrez une commande: ");
+                commands();
+            }
+        } finally {
+            consumer.close();
         }
     }
 
@@ -149,7 +154,7 @@ public class Runner implements CommandLineRunner {
                     get_country_values v_pays ou v_pays est un paramètre que l'utilisateur entrera */
                 try {
                     String[] param = inputUser.split(" ");
-                    if(param[0].equals("get_country_values") && param.length == 2){
+                    if (param[0].equals("get_country_values") && param.length == 2) {
                         producerRecord = new ProducerRecord<>(TOPIC_2, "data", inputUser);
                         pr2.send(producerRecord);
                     } else {
